@@ -20,7 +20,7 @@ Nothing here needs an account, except the owner analytics.
 
 There are 32 tools, and only the five that read your own show's analytics need an account of any kind.
 
-Built by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=apple-podcasts-mcp).
+Built by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme).
 
 <img src="https://cdn.navid.media/repos/apple-podcasts-mcp.gif?v=2" alt="Claude Code using the Apple Podcasts MCP server" width="520">
 
@@ -719,8 +719,8 @@ Navid Moazzez is a leading AI business strategist, and the host of the AI Creato
 
 **Links**
 
-- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=apple-podcasts-mcp)
-- Navid Media: [navid.media](https://navid.media?utm_source=github&utm_medium=readme&utm_campaign=apple-podcasts-mcp)
+- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme)
+- Navid Media: [navid.media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme)
 - YouTube: [@thenavidm](https://youtube.com/@thenavidm?sub_confirmation=1) and [@thenavidai](https://youtube.com/@thenavidai?sub_confirmation=1)
 - X: [@thenavidm](https://x.com/thenavidm)
 - Instagram: [@thenavidm](https://instagram.com/thenavidm)
@@ -747,4 +747,4 @@ Not affiliated with, endorsed by, or connected to Apple Inc.
 
 ---
 
-© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=readme&utm_campaign=apple-podcasts-mcp). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=readme&utm_campaign=apple-podcasts-mcp).
+© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme).
