@@ -1,6 +1,6 @@
 {
   "name": "@thenavidm/apple-podcasts-mcp-cli",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
   "type": "module",
   "main": "./dist/index.js",

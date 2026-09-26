@@ -115,12 +115,12 @@ result as a bug.
 |---|---|
 | 0 | Success |
 | 1 | Unknown command, or a command hidden by `APPLE_PODCASTS_READ_ONLY` / `APPLE_PODCASTS_LIBRARY=0` |
-| 2 | Usage error, wrong or missing arguments |
+| 2 | Usage error, wrong or missing arguments, or a write refused for want of `--confirm` |
 | 3 | Not found: no such show, episode, storefront or chart |
 | 4 | Authentication: a bad Reporter token or vendor number |
-| 5 | Upstream error from Apple or from a podcast host, and a write refused for want of `--confirm` |
+| 5 | Upstream error from Apple or from a podcast host |
 | 7 | Rate limited, wait about a minute and retry |
-| 10 | Config error |
+| 10 | Nothing configured: an analytics command without Apple Podcasts Connect details |
 
 Branch on these rather than reading the message.
 

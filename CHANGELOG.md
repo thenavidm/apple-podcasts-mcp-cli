@@ -2,9 +2,13 @@
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| apple-podcasts-mcp-cli | 1.1.0 | 2026-09-26 |
+| apple-podcasts-mcp-cli | 1.1.1 | 2026-09-26 |
 
 ---
+
+## 1.1.1
+
+SKILL.md's exit-code table now matches the code: a refused write exits 2, not 5, and 10 says what is missing.
 
 ## 1.1.0
 
