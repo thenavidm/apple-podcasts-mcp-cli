@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Install apple-podcasts-mcp from source and register it with Claude Code.
+# Install apple-podcasts-mcp-cli from source and register it with Claude Code.
 #
 # For the npm route, or any other client, see the README. This exists for the
 # case the README cannot cover in one paste: a clone, a build, and a client
 # pointed at an absolute path.
 set -euo pipefail
 
-REPO="${APPLE_PODCASTS_MCP_REPO:-https://github.com/thenavidm/apple-podcasts-mcp.git}"
+REPO="${APPLE_PODCASTS_MCP_REPO:-https://github.com/thenavidm/apple-podcasts-mcp-cli.git}"
 DIR="${APPLE_PODCASTS_MCP_DIR:-$HOME/.local/share/apple-podcasts-mcp}"
 
 need() {

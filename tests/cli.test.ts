@@ -10,7 +10,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { flagsFor, parseArgs, isCliCommand } from "../src/cli.js";
+import { flagsFor, parseArgs, isCliCommand, exitCodeFor, EXIT } from "../src/cli.js";
 import { ALL_TOOLS } from "../src/tools/index.js";
 
 describe("flagsFor", () => {
@@ -182,5 +182,27 @@ describe("documentation stays in step with the code", () => {
       .map((m) => m[1] as string)
       .filter((a) => !slugs.has(a));
     expect(dead).toEqual([]);
+  });
+});
+
+describe("exit codes", () => {
+  it("nothing configured is 10, not an auth failure", () => {
+    const e = { message: "Apple Podcasts Connect is not configured. This tool needs APPLE_PODCASTS_VENDOR_NUMBER and APPLE_PODCASTS_REPORTER_TOKEN." };
+    expect(exitCodeFor(e)).toBe(EXIT.config);
+  });
+
+  it("a real 401 is still auth", () => {
+    expect(exitCodeFor({ status: 401, message: "Reporter token rejected" })).toBe(EXIT.auth);
+  });
+
+  it("a refused write is 2, the caller's to fix", () => {
+    expect(exitCodeFor({ message: "export_subscriptions writes a file, so it will not run without --confirm." })).toBe(EXIT.usage);
+    expect(exitCodeFor({ message: "export_subscriptions is unavailable: this server is running with APPLE_PODCASTS_READ_ONLY=1." })).toBe(EXIT.usage);
+  });
+
+  it("not found is 3 and rate limited is 7", () => {
+    expect(exitCodeFor({ status: 404, message: "No show with that id" })).toBe(EXIT.notFound);
+    expect(exitCodeFor(Object.assign(new Error("No Apple Podcasts show with id 1 in the us storefront."), { name: "NotFoundError", status: 200 }))).toBe(EXIT.notFound);
+    expect(exitCodeFor({ status: 429, message: "slow down" })).toBe(EXIT.rateLimited);
   });
 });

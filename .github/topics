@@ -18,3 +18,5 @@ anthropic
 ai-agents
 llm-tools
 typescript
+cli
+command-line-tool

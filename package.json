@@ -1,7 +1,7 @@
 {
-  "name": "@thenavidm/apple-podcasts-mcp",
-  "version": "1.0.2",
-  "description": "Apple Podcasts MCP server for Claude Code and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
+  "name": "@thenavidm/apple-podcasts-mcp-cli",
+  "version": "1.1.0",
+  "description": "Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -37,10 +37,10 @@
   "homepage": "https://navid.me",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/thenavidm/apple-podcasts-mcp.git"
+    "url": "git+https://github.com/thenavidm/apple-podcasts-mcp-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/thenavidm/apple-podcasts-mcp/issues"
+    "url": "https://github.com/thenavidm/apple-podcasts-mcp-cli/issues"
   },
   "keywords": [
     "mcp",
@@ -62,7 +62,9 @@
     "anthropic",
     "ai-agents",
     "llm-tools",
-    "typescript"
+    "typescript",
+    "cli",
+    "command-line-tool"
   ],
   "files": [
     "dist",

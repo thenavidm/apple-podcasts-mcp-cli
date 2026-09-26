@@ -1,10 +1,42 @@
-# Apple Podcasts MCP changelog
+# Apple Podcasts MCP Server & CLI changelog
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| apple-podcasts-mcp | 1.0.0 | 2026-08-31 |
+| apple-podcasts-mcp-cli | 1.1.0 | 2026-09-26 |
 
 ---
+
+## 1.1.0
+
+### Renamed to apple-podcasts-mcp-cli
+
+The package and the repo are now `@thenavidm/apple-podcasts-mcp-cli`, the name
+every server with a CLI carries. The binaries keep their names,
+`apple-podcasts-mcp` and `apple-podcasts-cli`. The old package is deprecated
+with a pointer here, and GitHub redirects the old repo address.
+
+### A Claude Desktop extension
+
+`desktop-extension/build.sh` produces a `.mcpb` that vendors its own
+dependencies, so it installs on a double click with nothing present first. It
+asks for the country, whether to read the local library, and, only for a show
+owner, the Apple Podcasts Connect vendor number and Reporter token. Each
+release carries the file.
+
+### Exit codes follow the contract
+
+Nothing configured exits 10, not 4: "Apple Podcasts Connect is not configured"
+names the Reporter token, and matching auth first sent people looking for an
+expired credential they never had. A refused write exits 2, not 5, because it
+is the caller's to fix. A show Apple does not have exits 3, not 5: Apple answers
+it with 200 and an empty result, so the error class decides, not the status.
+
+### The README shows both surfaces
+
+The CLI was built in 1.0 and the README never said so. It now opens with both
+surfaces and real commands, and the FAQ covers what the CLI is and when to use
+it instead of the MCP server. Releases are made by `publish.yml` on a tag.
+
 
 ## 1.0.0
 

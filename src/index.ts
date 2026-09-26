@@ -51,7 +51,7 @@ Everything else:
   APPLE_PODCASTS_REPORTER_HOST      override the Reporter host, for testing
   APPLE_PODCASTS_HTTP_PORT / _HOST / _TOKEN  for --http
 
-https://github.com/thenavidm/apple-podcasts-mcp
+https://github.com/thenavidm/apple-podcasts-mcp-cli
 `;
 
 /**

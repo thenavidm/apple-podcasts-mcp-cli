@@ -1,4 +1,4 @@
-# Working on apple-podcasts-mcp
+# Working on apple-podcasts-mcp-cli
 
 For agents editing this repository. Users read the README. Driving the server is
 `SKILL.md`.

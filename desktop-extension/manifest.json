@@ -1,0 +1,91 @@
+{
+  "manifest_version": "0.2",
+  "name": "apple-podcasts",
+  "display_name": "Apple Podcasts",
+  "version": "1.1.0",
+  "description": "Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
+  "long_description": "Connects Claude to Apple Podcasts.\n\nThere is no account to create. Apple's catalog, its charts, its reviews and every podcast RSS feed are open, so most tools work the moment this is installed.\n\nOn a Mac with the Podcasts app, the library tools read your subscriptions and the transcript excerpts Apple caches for them. That needs Full Disk Access for Claude Desktop, in System Settings, then Privacy & Security, then Full Disk Access.\n\nIf you own a show, a vendor number and a Reporter access token from Apple Podcasts Connect add your listening numbers.\n\nNothing here posts, subscribes or rates. The one tool that writes, export_subscriptions, saves an OPML file and refuses to run without an explicit confirmation.",
+  "author": {
+    "name": "Navid Moazzez",
+    "url": "https://navid.me"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thenavidm/apple-podcasts-mcp-cli"
+  },
+  "homepage": "https://github.com/thenavidm/apple-podcasts-mcp-cli",
+  "documentation": "https://github.com/thenavidm/apple-podcasts-mcp-cli#readme",
+  "support": "https://github.com/thenavidm/apple-podcasts-mcp-cli/issues",
+  "license": "MIT",
+  "keywords": [
+    "apple-podcasts",
+    "podcasts",
+    "podcast-charts",
+    "rss",
+    "mcp"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/index.js"
+      ],
+      "env": {
+        "APPLE_PODCASTS_STOREFRONT": "${user_config.storefront}",
+        "APPLE_PODCASTS_LIBRARY": "${user_config.library}",
+        "APPLE_PODCASTS_VENDOR_NUMBER": "${user_config.vendor_number}",
+        "APPLE_PODCASTS_REPORTER_TOKEN": "${user_config.reporter_token}",
+        "APPLE_PODCASTS_READ_ONLY": "${user_config.read_only}"
+      }
+    }
+  },
+  "user_config": {
+    "storefront": {
+      "type": "string",
+      "title": "Country",
+      "description": "Two-letter country code for Apple's catalog, charts and reviews, which differ by country. For example us, gb or se.",
+      "default": "us",
+      "required": false
+    },
+    "library": {
+      "type": "boolean",
+      "title": "Read my Podcasts library",
+      "description": "On a Mac with the Podcasts app, search your subscriptions and the transcript excerpts Apple caches. Needs Full Disk Access for Claude Desktop.",
+      "default": true,
+      "required": false
+    },
+    "vendor_number": {
+      "type": "string",
+      "title": "Apple Podcasts Connect vendor number",
+      "description": "Only if you own a show and want its listening numbers. Leave empty otherwise.",
+      "required": false
+    },
+    "reporter_token": {
+      "type": "string",
+      "title": "Reporter access token",
+      "description": "From Apple Podcasts Connect, for the same show. It expires after 180 days. Leave empty otherwise.",
+      "sensitive": true,
+      "required": false
+    },
+    "read_only": {
+      "type": "boolean",
+      "title": "Read only",
+      "description": "Hide the one tool that writes a file, the OPML export.",
+      "default": false,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=20"
+    }
+  }
+}

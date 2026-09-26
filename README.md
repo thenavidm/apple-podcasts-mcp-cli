@@ -1,14 +1,16 @@
 <img src="https://cdn.navid.media/connectors/apple-podcasts-icon.png" alt="Apple Podcasts" width="88">
 
-# Apple Podcasts MCP
+# Apple Podcasts MCP Server & CLI
 
-[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/thenavidm/apple-podcasts-mcp/blob/main/LICENSE)
-[![npm](https://img.shields.io/npm/v/@thenavidm/apple-podcasts-mcp?color=orange&label=npm)](https://www.npmjs.com/package/@thenavidm/apple-podcasts-mcp)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/thenavidm/apple-podcasts-mcp-cli/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/v/@thenavidm/apple-podcasts-mcp-cli?color=orange&label=npm)](https://www.npmjs.com/package/@thenavidm/apple-podcasts-mcp-cli)
 [![YouTube](https://img.shields.io/badge/YouTube-@thenavidm-red?logo=youtube&logoColor=white)](https://youtube.com/@thenavidm?sub_confirmation=1)
 [![X](https://img.shields.io/badge/X-@thenavidm-black?logo=x)](https://x.com/thenavidm)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-thenavidm-0A66C2?logo=linkedin&logoColor=white)](https://linkedin.com/in/thenavidm)
 
-Apple Podcasts for Claude, Cursor, and any other AI agent.
+Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.
+
+One install gives you both surfaces, the same 32 tools under the same names, reading one array of tool definitions so they cannot drift apart.
 
 It searches Apple's catalogue and checks where a show ranks in each country.
 
@@ -20,9 +22,51 @@ Nothing here needs an account, except the owner analytics.
 
 There are 32 tools, and only the five that read your own show's analytics need an account of any kind.
 
-Built by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme).
+Built by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme).
 
 <img src="https://cdn.navid.media/repos/apple-podcasts-mcp.gif?v=2" alt="Claude Code using the Apple Podcasts MCP server" width="520">
+
+## Two ways to use it
+
+### Command line
+
+`apple-podcasts-cli` runs every tool as a command. Agents that run commands,
+like Claude Code, Codex and OpenCode, use it on their own, and you can type the
+same commands in a terminal, a script or a cron job:
+
+```bash
+apple-podcasts-cli                                     # every command, one line each
+apple-podcasts-cli status                              # what this server can reach
+apple-podcasts-cli get-top-shows --limit 5             # Apple's Top Shows chart
+apple-podcasts-cli find-chart-position --show 1200361736 --storefronts us --storefronts gb
+apple-podcasts-cli get-reviews --show 1200361736 --storefront gb
+apple-podcasts-cli search-library --query "compound interest"
+apple-podcasts-cli check-feed --show https://example.com/feed.xml
+apple-podcasts-cli find-chart-position --show 1200361736 --json --select best_rank,charted_in
+apple-podcasts-cli export-subscriptions --path ~/Desktop/podcasts.opml --confirm
+apple-podcasts-cli <command> --help                    # what any command takes
+```
+
+`--confirm` is the shell spelling of the confirmation the OPML export needs.
+`--json` gives JSON, `--compact` puts it on one line, `--select` keeps only the
+fields you name, and `--agent` turns on all of it for a script. Exit codes are
+0 ok, 2 usage or a refused write, 3 not found, 4 auth, 5 API, 7 rate limited
+and 10 nothing configured, so a script branches on the number.
+
+`apple-podcasts-cli schema <command>` prints the exact JSON Schema an MCP client
+receives for that tool.
+
+### MCP server, for AI agents
+
+`apple-podcasts-mcp` is what Claude Code, Claude Desktop, Cursor and the rest
+launch. You never run it by hand:
+
+```bash
+claude mcp add apple-podcasts -- npx -y @thenavidm/apple-podcasts-mcp-cli@latest
+```
+
+In Claude Desktop, the [`.mcpb` extension](https://github.com/thenavidm/apple-podcasts-mcp-cli/releases/latest)
+installs on a double click. Section 4 has every other client.
 
 ## Contents
 
@@ -66,11 +110,18 @@ catalog can.
 Node 20 or newer. Nothing else.
 
 ```bash
-npx -y @thenavidm/apple-podcasts-mcp@latest --version
+npx -y @thenavidm/apple-podcasts-mcp-cli@latest --version
 ```
 
 That is the whole install. `npx` fetches it on demand, so there is nothing to
 update later.
+
+For the CLI as a command you or your agent can run anywhere, install it once:
+
+```bash
+npm install -g @thenavidm/apple-podcasts-mcp-cli
+apple-podcasts-cli
+```
 
 **Most of this server works immediately, with no account.** Apple's catalog,
 its charts, its reviews and every podcast RSS feed are all open. Your own
@@ -130,10 +181,10 @@ and verify it. Paste this into Claude Code, Cursor, or any agent with terminal
 access:
 
 ```
-Set up @thenavidm/apple-podcasts-mcp for me.
+Set up @thenavidm/apple-podcasts-mcp-cli for me.
 
-1. Add it to my MCP client config, running via `npx -y @thenavidm/apple-podcasts-mcp@latest`.
-2. Run `npx -y @thenavidm/apple-podcasts-mcp@latest doctor` and show me the output.
+1. Add it to my MCP client config, running via `npx -y @thenavidm/apple-podcasts-mcp-cli@latest`.
+2. Run `npx -y @thenavidm/apple-podcasts-mcp-cli@latest doctor` and show me the output.
 3. If the local library check fails on permissions, tell me exactly which app
    to add to Full Disk Access and stop so I can do it.
 4. Do not ask me for Apple Podcasts Connect credentials unless I say I own a
@@ -150,12 +201,21 @@ Every block is self-contained. No credentials are needed in any of them; the
 ### Claude Code
 
 ```bash
-claude mcp add apple-podcasts -- npx -y @thenavidm/apple-podcasts-mcp@latest
+claude mcp add apple-podcasts -- npx -y @thenavidm/apple-podcasts-mcp-cli@latest
 ```
 
 `--scope user` makes it available in every project rather than the current one.
 
 ### Claude Desktop
+
+The short way: download the [`.mcpb` extension](https://github.com/thenavidm/apple-podcasts-mcp-cli/releases/latest)
+from the latest release and double-click it. It carries its own dependencies,
+so there is no config file to edit and nothing to install first. Claude Desktop
+asks for your country and, only if you own a show, your Apple Podcasts Connect
+details. For the library tools, give Claude Desktop Full Disk Access
+([section 3](#3-setup-)).
+
+The long way, if you would rather edit the config yourself:
 
 **1. Open the config file.**
 
@@ -186,7 +246,7 @@ If the file is empty or does not exist, paste this whole thing in:
   "mcpServers": {
     "apple-podcasts": {
       "command": "npx",
-      "args": ["-y", "@thenavidm/apple-podcasts-mcp@latest"]
+      "args": ["-y", "@thenavidm/apple-podcasts-mcp-cli@latest"]
     }
   }
 }
@@ -246,7 +306,7 @@ takes a `type`:
     "apple-podcasts": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@thenavidm/apple-podcasts-mcp@latest"]
+      "args": ["-y", "@thenavidm/apple-podcasts-mcp-cli@latest"]
     }
   }
 }
@@ -261,7 +321,7 @@ Or run **MCP: Add Server** from the command palette.
 ```toml
 [mcp_servers.apple-podcasts]
 command = "npx"
-args = ["-y", "@thenavidm/apple-podcasts-mcp@latest"]
+args = ["-y", "@thenavidm/apple-podcasts-mcp-cli@latest"]
 ```
 
 ### Gemini CLI
@@ -274,7 +334,7 @@ claude.ai runs connectors from Anthropic's cloud rather than your machine, so it
 needs a public HTTPS URL and cannot run a local command.
 
 ```bash
-npx -y @thenavidm/apple-podcasts-mcp@latest --http --port 8000
+npx -y @thenavidm/apple-podcasts-mcp-cli@latest --http --port 8000
 ```
 
 Host that somewhere with a public HTTPS URL, then in claude.ai: **Customize**,
@@ -306,7 +366,7 @@ and optionally an `env` block. Zed, Cline and Continue all work.
 ## 5. Check it worked 🩺
 
 ```bash
-npx -y @thenavidm/apple-podcasts-mcp@latest doctor
+npx -y @thenavidm/apple-podcasts-mcp-cli@latest doctor
 ```
 
 It probes each of the four sources separately and names the failing one, rather
@@ -618,6 +678,20 @@ An MCP server is a small program that gives an AI assistant a set of tools. MCP 
 </details>
 
 <details>
+<summary><b>What is the CLI?</b></summary>
+
+`apple-podcasts-cli` is the same program as the MCP server, run as commands. AI agents that run commands, like Claude Code, Codex and OpenCode, use it on their own, and you can type the same commands in a terminal, a script or a cron job. Every tool is a command with dashes, so `get_top_shows` runs as `apple-podcasts-cli get-top-shows`.
+
+</details>
+
+<details>
+<summary><b>Should I use the MCP server or the CLI?</b></summary>
+
+Use the MCP server in an app with no terminal, like Claude Desktop's chat. Use the CLI anywhere commands run: an agent like Claude Code, Codex or OpenCode, a script or a cron job. The MCP server sends its full tool list to the model on every turn, and the CLI costs nothing until it runs.
+
+</details>
+
+<details>
 <summary><b>Do I need an Apple developer account?</b></summary>
 
 You do not need one. Nothing in the first 25 tools needs an account of any kind. Only the owner analytics do, and only if you have a show in Apple Podcasts Connect.
@@ -707,11 +781,11 @@ Nothing is sent anywhere. There is no backend: requests go to Apple and to podca
 
 ## Versions
 
-See [CHANGELOG.md](https://github.com/thenavidm/apple-podcasts-mcp/blob/main/CHANGELOG.md).
+See [CHANGELOG.md](https://github.com/thenavidm/apple-podcasts-mcp-cli/blob/main/CHANGELOG.md).
 
 ## Questions
 
-Run into a problem or have a question? [Open an issue](https://github.com/thenavidm/apple-podcasts-mcp/issues) and I will help.
+Run into a problem or have a question? [Open an issue](https://github.com/thenavidm/apple-podcasts-mcp-cli/issues) and I will help.
 
 ## About the author
 
@@ -719,8 +793,8 @@ Navid Moazzez is a leading AI business strategist, and the host of the AI Creato
 
 **Links**
 
-- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme)
-- Navid Media: [navid.media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme)
+- Personal website: [navid.me](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme)
+- Navid Media: [navid.media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme)
 - YouTube: [@thenavidm](https://youtube.com/@thenavidm?sub_confirmation=1) and [@thenavidai](https://youtube.com/@thenavidai?sub_confirmation=1)
 - X: [@thenavidm](https://x.com/thenavidm)
 - Instagram: [@thenavidm](https://instagram.com/thenavidm)
@@ -741,10 +815,10 @@ falling back to the `sqlite3` command that ships with macOS.
 
 ## License
 
-[MIT](https://github.com/thenavidm/apple-podcasts-mcp/blob/main/LICENSE). Free to use, modify, and share.
+[MIT](https://github.com/thenavidm/apple-podcasts-mcp-cli/blob/main/LICENSE). Free to use, modify, and share.
 
 Not affiliated with, endorsed by, or connected to Apple Inc.
 
 ---
 
-© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp&utm_content=readme).
+© 2026 [NM Media](https://navid.media?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme). Made with ❤️ by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme).

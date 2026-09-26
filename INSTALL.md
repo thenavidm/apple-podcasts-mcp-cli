@@ -2,7 +2,7 @@
 
 Most of this server needs no setup at all. Apple's catalog, its charts, its
 reviews and every podcast RSS feed are open, so `npx -y
-@thenavidm/apple-podcasts-mcp@latest` gives you 25 working tools immediately.
+@thenavidm/apple-podcasts-mcp-cli@latest` gives you 25 working tools immediately.
 
 This file covers the two optional parts.
 
@@ -41,7 +41,7 @@ tool.
 Then:
 
 ```bash
-npx -y @thenavidm/apple-podcasts-mcp@latest doctor
+npx -y @thenavidm/apple-podcasts-mcp-cli@latest doctor
 ```
 
 The library check reports how many shows and episodes it can see, how many carry
@@ -98,7 +98,7 @@ In your MCP client config, as an `env` block:
   "mcpServers": {
     "apple-podcasts": {
       "command": "npx",
-      "args": ["-y", "@thenavidm/apple-podcasts-mcp@latest"],
+      "args": ["-y", "@thenavidm/apple-podcasts-mcp-cli@latest"],
       "env": {
         "APPLE_PODCASTS_VENDOR_NUMBER": "1234567",
         "APPLE_PODCASTS_REPORTER_TOKEN": "..."
@@ -113,7 +113,7 @@ Or in a shell, for `doctor`:
 ```bash
 export APPLE_PODCASTS_VENDOR_NUMBER=1234567
 export APPLE_PODCASTS_REPORTER_TOKEN=...
-npx -y @thenavidm/apple-podcasts-mcp@latest doctor
+npx -y @thenavidm/apple-podcasts-mcp-cli@latest doctor
 ```
 
 ### Check it

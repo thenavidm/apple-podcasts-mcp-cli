@@ -9,3 +9,5 @@ _archive/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+desktop-extension/build/
+desktop-extension/*.mcpb
