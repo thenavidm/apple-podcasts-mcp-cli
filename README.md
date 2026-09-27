@@ -77,7 +77,7 @@ installs on a double click. Section 4 has every other client.
 | 3 | [Setup](#3-setup-) | Only if you want the optional parts |
 | 4 | [Connect your client](#4-connect-your-client-) | Every client, copy and paste |
 | 5 | [Check it worked](#5-check-it-worked-) | `doctor`, and what actually fails |
-| 6 | [What it costs to have connected](#6-what-it-costs-to-have-connected) | Tokens per turn, and how to spend less |
+| 6 | [What it costs to have connected](#6-what-it-costs-to-have-connected) | Measured in Claude Code, and how to spend less |
 | 7 | [Tools](#7-tools-) | All 32, grouped by what they reach |
 | 8 | [The four sources](#8-the-four-sources-) | Why this is not one API |
 | 9 | [What Apple actually does](#9-what-apple-actually-does-) | The traps, learned the hard way |
@@ -383,25 +383,32 @@ Two things account for most failures:
 
 ## 6. What it costs to have connected
 
-Every MCP server sends its whole tool list to the model on **every turn**,
-whether you mention it or not. Measured on this one:
+Both surfaces are the same program with the same 32 tools. The
+difference is when the model pays for them. Measured in Claude Code:
 
-| | Sent per turn |
-|---|---|
-| 32 tool definitions, plus the server instructions | **~10,500 tokens** |
+| | MCP server | CLI |
+|---|---|---|
+| Every message, with every tool loaded | 13,800 tokens | nothing |
+| Every message, Claude Code's default | 1,200 tokens | nothing |
+| When Apple Podcasts comes up | nothing more, or the tools it picks | 4,300 tokens for `SKILL.md`, once |
+| 20 messages with Apple Podcasts in 1, every tool loaded | 275,000 tokens | 4,300 tokens |
 
-That is the price of it being connected at all, before you ask anything. It is
-not unusual, and almost nobody publishes it.
+Claude Code's [tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search)
+is on by default: it sends only the tool names and the server instructions,
+and loads a tool's full definition when the model reaches for it. An app that
+loads every tool up front pays the first line on every message, whether
+Apple Podcasts comes up or not. With the skill added, Claude Code also lists its
+one-line description, about 190 tokens.
 
-Two ways to spend less.
+To spend less, turn the server off when you are not using it, which in Claude
+Code is the `/mcp` panel. `APPLE_PODCASTS_LIBRARY=0` takes the 7 library tools off the list.
+Or install the CLI and add the server on the days it earns its place.
 
-**Turn it off when you are not using it.** In Claude Code that is
-`@apple-podcasts` to toggle, and every client has an equivalent.
-
-**Or reach for a shell instead.** A command is not in the context window, so it
-costs nothing on the turns you do not use it. It is not free either: an agent
-still needs the skill file, roughly 1,400 tokens, but only once the subject
-comes up rather than on every turn regardless.
+Measured on 2026-09-27 with Claude Code 2.1.257 on Claude Opus 5: one
+short prompt with and without the server connected, once with
+`ENABLE_TOOL_SEARCH=false` and once with the default, the difference read
+from the API's own usage figures. `SKILL.md` was measured the same way. Other
+apps and models count tokens a little differently.
 
 ## 7. Tools 🛠️
 
@@ -687,7 +694,7 @@ An MCP server is a small program that gives an AI assistant a set of tools. MCP 
 <details>
 <summary><b>Should I use the MCP server or the CLI?</b></summary>
 
-Use the MCP server in an app with no terminal, like Claude Desktop's chat. Use the CLI anywhere commands run: an agent like Claude Code, Codex or OpenCode, a script or a cron job. The MCP server sends its full tool list to the model on every turn, and the CLI costs nothing until it runs.
+Use the MCP server in an app with no terminal, like Claude Desktop's chat. Use the CLI anywhere commands run: an agent like Claude Code, Codex or OpenCode, a script or a cron job. The MCP server's tools take up context on every message, and the CLI costs nothing until it runs.
 
 </details>
 
