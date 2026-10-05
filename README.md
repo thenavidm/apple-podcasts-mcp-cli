@@ -70,7 +70,7 @@ installs on a double click. Section 4 has every other client.
 
 Then just ask: _"where does this show rank in the US, UK and Sweden, and what do its reviews complain about?"_
 The one tool that writes, the OPML export, waits for your approval in the client,
-as [section 11](#11-safety-) explains.
+as [section 11](#11-safety-%EF%B8%8F) explains.
 
 ### Which one
 
@@ -100,7 +100,7 @@ is the tool name with dashes.
 | Analytics for a show you own | `apple-podcasts-cli check-analytics-access` / `get-show-analytics` / `get-episode-analytics` / `get-followers` / `get-analytics-report` | `check_analytics_access` / `get_show_analytics` / `get_episode_analytics` / `get_followers` / `get_analytics_report` |
 | Check your setup | `apple-podcasts-cli doctor` | not a tool |
 
-All 32 are in [section 7](#7-tools-).
+All 32 are in [section 7](#7-tools-%EF%B8%8F).
 
 ## Contents
 
@@ -112,11 +112,11 @@ All 32 are in [section 7](#7-tools-).
 | 4 | [Connect your client](#4-connect-your-client-) | Every client, copy and paste |
 | 5 | [Check it worked](#5-check-it-worked-) | `doctor`, and what actually fails |
 | 6 | [What it costs to have connected](#6-what-it-costs-to-have-connected) | Measured in Claude Code, and how to spend less |
-| 7 | [Tools](#7-tools-) | All 32, grouped by what they reach |
+| 7 | [Tools](#7-tools-%EF%B8%8F) | All 32, grouped by what they reach |
 | 8 | [The four sources](#8-the-four-sources-) | Why this is not one API |
-| 9 | [What Apple actually does](#9-what-apple-actually-does-) | The traps, learned the hard way |
+| 9 | [What Apple actually does](#9-what-apple-actually-does-%EF%B8%8F) | The traps, learned the hard way |
 | 10 | [Your data](#10-your-data-) | What is read, and what never leaves |
-| 11 | [Safety](#11-safety-) | Short, because almost nothing writes |
+| 11 | [Safety](#11-safety-%EF%B8%8F) | Short, because almost nothing writes |
 | 12 | [Troubleshooting](#12-troubleshooting-) | Symptom to cause |
 | 13 | [FAQ](#13-faq-) | Including what an MCP server is |
 
