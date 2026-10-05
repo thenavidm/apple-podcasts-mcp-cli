@@ -1,6 +1,6 @@
 {
   "name": "@thenavidm/apple-podcasts-mcp-cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,7 +25,7 @@
     "build:mcpb": "bash desktop-extension/build.sh"
   },
   "dependencies": {
-    "@thenavidm/slipway": "^0.1.9",
+    "@thenavidm/slipway": "^0.1.17",
     "zod": "^4.2.0"
   },
   "devDependencies": {
