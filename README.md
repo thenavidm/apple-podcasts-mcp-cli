@@ -1,4 +1,4 @@
-<img src="https://cdn.navid.media/connectors/apple-podcasts-icon.png" alt="Apple Podcasts" width="88">
+<img src="https://cdn.navid.me/connectors/apple-podcasts-icon.png" alt="Apple Podcasts" width="88">
 
 # Apple Podcasts MCP Server & CLI
 
@@ -12,7 +12,7 @@ Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools
 
 One install gives you both surfaces, the same 32 tools under the same names, reading one array of tool definitions so they cannot drift apart.
 
-It searches Apple's catalogue and checks where a show ranks in each country.
+It searches Apple's catalog and checks where a show ranks in each country.
 
 It reads listener reviews and parses any podcast's RSS feed.
 
@@ -22,9 +22,9 @@ Nothing here needs an account, except the owner analytics.
 
 There are 32 tools, and only the five that read your own show's analytics need an account of any kind.
 
-Built by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme).
+Built and maintained by [Navid Moazzez](https://navid.me?utm_source=github&utm_medium=referral&utm_campaign=apple-podcasts-mcp-cli&utm_content=readme). Built on [Slipway](https://github.com/thenavidm/slipway), which turns one definition of each tool into the MCP server and the CLI.
 
-<img src="https://cdn.navid.media/repos/apple-podcasts-mcp.gif?v=2" alt="Claude Code using the Apple Podcasts MCP server" width="520">
+<img src="https://cdn.navid.me/repos/apple-podcasts-mcp.gif" alt="Claude Code using the Apple Podcasts MCP server" width="520">
 
 ## Two ways to use it
 
@@ -50,13 +50,13 @@ apple-podcasts-cli <command> --help                    # what any command takes
 `--confirm` is the shell spelling of the confirmation the OPML export needs.
 `--json` gives JSON, `--compact` puts it on one line, `--select` keeps only the
 fields you name, and `--agent` turns on all of it for a script. Exit codes are
-0 ok, 2 usage or a refused write, 3 not found, 4 auth, 5 API, 7 rate limited
-and 10 nothing configured, so a script branches on the number.
+0 ok, 1 unexpected, 2 usage or a refused write, 3 not found, 4 auth, 5 API,
+7 rate limited and 10 nothing configured, so a script branches on the number.
 
 `apple-podcasts-cli schema <command>` prints the exact JSON Schema an MCP client
 receives for that tool.
 
-### MCP server, for AI agents
+### MCP server, for your AI app
 
 `apple-podcasts-mcp` is what Claude Code, Claude Desktop, Cursor and the rest
 launch. You never run it by hand:
@@ -68,9 +68,43 @@ claude mcp add apple-podcasts -- npx -y @thenavidm/apple-podcasts-mcp-cli@latest
 In Claude Desktop, the [`.mcpb` extension](https://github.com/thenavidm/apple-podcasts-mcp-cli/releases/latest)
 installs on a double click. Section 4 has every other client.
 
+Then just ask: _"where does this show rank in the US, UK and Sweden, and what do its reviews complain about?"_
+The one tool that writes, the OPML export, waits for your approval in the client,
+as [section 11](#11-safety-) explains.
+
+### Which one
+
+| Where you are | What you can reach |
+|---|---|
+| An agent that can run shell commands, like Claude Code or Cursor | Both. The CLI is the cheaper one: it costs nothing until you type it |
+| claude.ai, the Claude Desktop chat tab, or a phone | The server only. There is no shell to run a command in |
+| A terminal, a script, cron or CI | The CLI only. There is no MCP client in a shell |
+
+They are the same program reading the same tool definitions, so anything one
+can do, the other can.
+
+## Features
+
+Every tool is both a command and an MCP tool, with the same name. The command
+is the tool name with dashes.
+
+| Capability | CLI command | MCP tool |
+|---|---|---|
+| What this server can reach | `apple-podcasts-cli status` | `status` |
+| Search the catalog | `apple-podcasts-cli search-podcasts` / `search-episodes` / `get-podcast` / `get-podcast-episodes` / `list-genres` / `resolve-apple-link` | `search_podcasts` / `search_episodes` / `get_podcast` / `get_podcast_episodes` / `list_genres` / `resolve_apple_link` |
+| Charts and ranking, per country | `apple-podcasts-cli get-top-shows` / `get-trending-episodes` / `find-chart-position` / `list-storefronts` | `get_top_shows` / `get_trending_episodes` / `find_chart_position` / `list_storefronts` |
+| Listener reviews | `apple-podcasts-cli get-reviews` / `get-review-summary` | `get_reviews` / `get_review_summary` |
+| RSS feeds and transcripts | `apple-podcasts-cli get-feed` / `get-feed-episode` / `find-transcripts` / `check-feed` | `get_feed` / `get_feed_episode` / `find_transcripts` / `check_feed` |
+| Research a niche | `apple-podcasts-cli get-show-profile` / `compare-shows` / `find-similar-shows` | `get_show_profile` / `compare_shows` / `find_similar_shows` |
+| Your library on this Mac | `apple-podcasts-cli list-subscriptions` / `search-library` / `list-recent-episodes` / `list-saved-episodes` / `get-library-episode` / `library-stats` / `export-subscriptions` | `list_subscriptions` / `search_library` / `list_recent_episodes` / `list_saved_episodes` / `get_library_episode` / `library_stats` / `export_subscriptions` |
+| Analytics for a show you own | `apple-podcasts-cli check-analytics-access` / `get-show-analytics` / `get-episode-analytics` / `get-followers` / `get-analytics-report` | `check_analytics_access` / `get_show_analytics` / `get_episode_analytics` / `get_followers` / `get_analytics_report` |
+| Check your setup | `apple-podcasts-cli doctor` | not a tool |
+
+All 32 are in [section 7](#7-tools-).
+
 ## Contents
 
-| | Section | |
+| # | Section | What is in it |
 |---|---|---|
 | 1 | [What you can ask it](#1-what-you-can-ask-it-) | Real prompts, not features |
 | 2 | [Quick install](#2-quick-install-) | One line, no account |
@@ -107,7 +141,7 @@ catalog can.
 
 ## 2. Quick install ⚡
 
-Node 20 or newer. Nothing else.
+Node 22 or newer. Nothing else.
 
 ```bash
 npx -y @thenavidm/apple-podcasts-mcp-cli@latest --version
@@ -386,12 +420,12 @@ Two things account for most failures:
 Both surfaces are the same program with the same 32 tools. The
 difference is when the model pays for them. Measured in Claude Code:
 
-| | MCP server | CLI |
+| Cost | MCP server | CLI |
 |---|---|---|
-| Every message, with every tool loaded | 13,800 tokens | nothing |
-| Every message, Claude Code's default | 1,200 tokens | nothing |
-| When Apple Podcasts comes up | nothing more, or the tools it picks | 4,300 tokens for `SKILL.md`, once |
-| 20 messages with Apple Podcasts in 1, every tool loaded | 275,000 tokens | 4,300 tokens |
+| Every message, with every tool loaded | 12,700 tokens | nothing |
+| Every message, Claude Code's default | 1,170 tokens | nothing |
+| When Apple Podcasts comes up | nothing more, or the tools it picks | 4,320 tokens for `SKILL.md`, once |
+| 20 messages with Apple Podcasts in 1, every tool loaded | 254,000 tokens | 4,320 tokens |
 
 Claude Code's [tool search](https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search)
 is on by default: it sends only the tool names and the server instructions,
@@ -404,11 +438,21 @@ To spend less, turn the server off when you are not using it, which in Claude
 Code is the `/mcp` panel. `APPLE_PODCASTS_LIBRARY=0` takes the 7 library tools off the list.
 Or install the CLI and add the server on the days it earns its place.
 
-Measured on 2026-09-27 with Claude Code 2.1.257 on Claude Opus 5: one
+Measured on 2026-10-05 with Claude Code 2.1.286 on Claude Opus 5.5: one
 short prompt with and without the server connected, once with
 `ENABLE_TOOL_SEARCH=false` and once with the default, the difference read
 from the API's own usage figures. `SKILL.md` was measured the same way. Other
 apps and models count tokens a little differently.
+
+Against 1.1.2, measured the same day: every tool loaded costs 12,701 tokens
+instead of 13,764, tool search the same, and `SKILL.md` 51 more, because it now
+says how approval works over MCP and lists every exit code. In Codex 0.159.3 on
+gpt-6.1-sol, the same task, "find the command that shows where a podcast ranks
+on Apple's charts across several countries and the flags it requires", read a
+median of 84,197 input tokens on 2.0.0 against 84,531 on 1.1.2 over the CLI,
+and 48,263 against 48,262 over MCP, five runs each. Codex prints the tool list
+from a script and keeps the same share of it on both sides; the part it kept was
+two tokens longer on 2.0.0 (8,928 against 8,926), which is the whole difference.
 
 ## 7. Tools 🛠️
 
@@ -612,12 +656,12 @@ The access token expires after 180 days with no refresh path.
 There is no server behind this. Your requests go straight from your machine to
 Apple and to podcast hosts, and nothing is collected or sent anywhere else.
 
-| | Where |
+| What | Where |
 |---|---|
 | Your subscriptions and episodes | Read from `~/Library/Group Containers/243LU875E5.groups.com.apple.podcasts/`, read-only, never written |
 | Apple Podcasts Connect credentials | Your client's config. Never written to disk by this server |
 | Catalog and chart responses | Memory only, for five minutes |
-| OPML export | Only the path you name, and only with `confirm: true` |
+| OPML export | Only the path you name, and only once you approve it |
 | Audit log | Only the file you name in `APPLE_PODCASTS_AUDIT_LOG` |
 
 The library database is opened read-only through an immutable URI, which is also
@@ -632,10 +676,19 @@ serves a podcast RSS feed you ask for.
 Short, because there is almost nothing to guard. **There is no Apple Podcasts
 write API and this server does not invent one.** Of 32 tools, 31 only read.
 
-`export_subscriptions` writes an OPML file, so it refuses without
-`confirm: true`. That is the only guard, deliberately: a confirmation on every
-call would train a model to pass the flag reflexively, which is worse than not
-asking.
+`export_subscriptions` writes an OPML file and overwrites whatever is at the
+path, so it waits for your approval. That is the only guard, deliberately:
+approval on every call would train people and models to approve reflexively,
+which is worse than not asking.
+
+Over MCP a person approves the export where the client can ask: Claude Code
+(2.1.246 and later) shows its own prompt, and a client that can show forms asks
+with an approval form whose one box starts unticked. Each approval is signed,
+bound to that exact call and works once. Where a client can do neither, the
+model's `confirm: true` counts, and it should pass it only when you asked for
+that export. `APPLE_PODCASTS_CONFIRM=model` makes `confirm: true` enough
+everywhere, for an agent with no person to ask. In a terminal it is `--confirm`,
+which `--agent` never adds.
 
 The control that matters here is privacy rather than damage:
 
@@ -649,12 +702,12 @@ Tools disappear from the list rather than erroring when called, because a model
 cannot call a tool it cannot see.
 
 **Prompt injection.** Reviews are the most injectable surface here, and
-"summarise my reviews" is the first thing anyone asks. Review bodies, show notes
+"summarize my reviews" is the first thing anyone asks. Review bodies, show notes
 and transcript excerpts are all fenced with a marker naming them as data before
 a model reads them, and any attempt to close that fence early is defanged. The
 server instructions repeat the rule. That framing helps and it is not a
 guarantee: for an agent working unattended over other people's text,
-`APPLE_PODCASTS_READ_ONLY=1` is the real defence.
+`APPLE_PODCASTS_READ_ONLY=1` is the real defense.
 
 ## 12. Troubleshooting 🔧
 
@@ -673,7 +726,10 @@ guarantee: for an agent working unattended over other people's text,
 | `library_stats` says no usable play data | Normal on a Mac. Progress is tracked on the device you listen on |
 | Analytics say "no report available" | Reporting lags one to two days. Try a date three or four days back |
 | Analytics reject the token | Tokens expire after 180 days. Regenerate it in Podcasts Connect |
-| "will not run without confirm: true" | Working as intended. Only `export_subscriptions` does this |
+| "will not run without --confirm" | Working as intended. Only `export_subscriptions` does this |
+| `claude -p` will not export | Headless Claude Code refuses tools that need a person. Give that agent `APPLE_PODCASTS_CONFIRM=model` |
+| No approval form appears | The client cannot show forms, so the model's `confirm: true` counts, and only for an export you asked for |
+| A piped request gets no answer | Stdin closed before the answer. The MCP stdio binding stops a server when its input ends; keep stdin open until you read the answer, or use the CLI |
 
 ## 13. FAQ ❓
 
@@ -755,6 +811,26 @@ Because they are different. Apple runs a separate catalog, chart and review pool
 </details>
 
 <details>
+<summary><b>Can it write anything without me asking?</b></summary>
+
+One tool writes, the OPML export, and it waits for your approval: Claude Code
+shows its own prompt, and a client that can show forms asks with one. Where a
+client can do neither, the model's `confirm: true` counts.
+`APPLE_PODCASTS_READ_ONLY=1` takes it off the list entirely. Nothing here can
+post, subscribe or rate, because Apple has no API for any of it.
+
+</details>
+
+<details>
+<summary><b>How do I know it is actually working?</b></summary>
+
+`doctor`. It probes each of the four sources on its own, the catalog, the charts
+and reviews, your library and Apple Podcasts Connect, and names the failing one
+with its fix rather than leaving you to guess.
+
+</details>
+
+<details>
 <summary><b>Is my data sent anywhere?</b></summary>
 
 Nothing is sent anywhere. There is no backend: requests go to Apple and to podcast RSS hosts and nowhere else.
@@ -773,7 +849,12 @@ Nothing is sent anywhere. There is no backend: requests go to Apple and to podca
 | `APPLE_PODCASTS_REPORTER_TOKEN` | none | Reporter access token, expires after 180 days |
 | `APPLE_PODCASTS_READ_ONLY` | `0` | Hide the one tool that writes a file |
 | `APPLE_PODCASTS_ALLOW_DESTRUCTIVE` | `1` | `0` blocks the OPML export |
-| `APPLE_PODCASTS_AUDIT_LOG` | none | Append-only log of every attempted write |
+| `APPLE_PODCASTS_AUDIT_LOG` | none | Append-only log of every attempted write, and who approved it |
+| `APPLE_PODCASTS_CONFIRM` | `human` | `model` lets `confirm: true` alone approve over MCP, for an agent with no person to ask |
+| `APPLE_PODCASTS_TOOLSETS` | `all` | `library` and the rest: which toolsets are on. `APPLE_PODCASTS_LIBRARY=0` turns the library one off |
+| `APPLE_PODCASTS_SURFACE` | `full` | `search` lists three tools that find, describe and run the rest |
+| `APPLE_PODCASTS_TOOL_TIMEOUT_MS` | none | Give up on any tool after this long |
+| `APPLE_PODCASTS_DEBUG` | `0` | `1` prints debug lines on stderr |
 | `APPLE_PODCASTS_CACHE_TTL_MS` | `300000` | How long a fetched response stays reusable |
 | `APPLE_PODCASTS_REQUEST_TIMEOUT_MS` | `30000` | Per-request deadline |
 | `APPLE_PODCASTS_MIN_REQUEST_INTERVAL_MS` | `220` | Spacing between requests, to stay under the limit |
@@ -784,7 +865,8 @@ Nothing is sent anywhere. There is no backend: requests go to Apple and to podca
 | `APPLE_PODCASTS_REPORTER_HOST` | `https://reportingitc-reporter.apple.com` | Override the Reporter host, for testing |
 | `APPLE_PODCASTS_HTTP_PORT` | `8788` | For `--http` |
 | `APPLE_PODCASTS_HTTP_HOST` | `127.0.0.1` | For `--http` |
-| `APPLE_PODCASTS_HTTP_TOKEN` | none | Bearer token required by `--http` |
+| `APPLE_PODCASTS_HTTP_TOKEN` | none | Bearer token for `--http`. Any address but localhost refuses to start without one |
+| `APPLE_PODCASTS_HTTP_ALLOWED_ORIGINS` | none | Comma-separated browser origins allowed to connect; a page from any other site is refused |
 
 ## Versions
 
@@ -813,7 +895,8 @@ If this is useful, star the repo and come say hi on [X](https://x.com/thenavidm)
 
 | Library | License | What it does |
 |---|---|---|
-| [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) | MIT | The MCP server and transports |
+| [Slipway](https://github.com/thenavidm/slipway) | Apache-2.0 | The MCP server and the CLI from one definition of each tool, with the write guard |
+| [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) | Apache-2.0 | The MCP protocol and transports, through Slipway |
 | [zod](https://github.com/colinhacks/zod) | MIT | Tool argument schemas and validation |
 
 RSS parsing and SQLite reading are both built in, so there is nothing else to

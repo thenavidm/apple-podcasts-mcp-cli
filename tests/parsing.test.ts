@@ -17,7 +17,7 @@ import { resolveLink } from "../src/api/itunes.js";
 import { inBandError } from "../src/api/errors.js";
 import { escapeLike, flattenSnippet, artwork } from "../src/library/library.js";
 import { fromCoreDataDate, interpolate, quote } from "../src/library/db.js";
-import { fence } from "../src/safety.js";
+import { fence } from "../src/format/fence.js";
 import { normalizeStorefront } from "../src/config.js";
 
 describe("xml", () => {

@@ -13,16 +13,14 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildServer } from "../src/server.js";
 import { loadConfig, type Config } from "../src/config.js";
 import { HttpClient, type FetchLike } from "../src/api/http.js";
 import { ItunesClient } from "../src/api/itunes.js";
 import { ReviewsClient, REVIEWS_PER_PAGE } from "../src/api/reviews.js";
 import { ChartsClient } from "../src/api/charts.js";
 import { ReporterClient } from "../src/api/reporter.js";
-import { WriteGuard } from "../src/safety.js";
 import { ALL_TOOLS } from "../src/tools/index.js";
-import { RateLimitError, ValidationError, WriteBlockedError } from "../src/api/errors.js";
+import { RateLimitError, ValidationError } from "../src/api/errors.js";
 
 /** A config that touches nothing real. */
 function testConfig(overrides: Partial<Config> = {}): Config {
@@ -61,9 +59,8 @@ describe("tool registration", () => {
     for (const tool of ALL_TOOLS) {
       expect(tool.name, `${tool.name} name`).toMatch(/^[a-z][a-z0-9_]*$/);
       expect(tool.description.length, `${tool.name} description`).toBeGreaterThan(40);
-      expect(tool.schema, `${tool.name} schema`).toBeDefined();
+      expect(tool.input, `${tool.name} schema`).toBeDefined();
       expect(["read", "write", "destructive"]).toContain(tool.risk);
-      expect(["public", "library", "reporter"]).toContain(tool.surface);
     }
   });
 
@@ -81,75 +78,10 @@ describe("tool registration", () => {
     // openWorldHint drives what a client will auto-approve. The library tools
     // read a local file and contact nothing, and saying otherwise misreports
     // the only tools here that never leave the machine.
-    for (const tool of ALL_TOOLS.filter((t) => t.surface === "library")) {
-      expect(tool.name.startsWith("_")).toBe(false);
-    }
-    const libraryNames = ALL_TOOLS.filter((t) => t.surface === "library").map((t) => t.name);
-    expect(libraryNames).toContain("search_library");
-    expect(libraryNames).toContain("export_subscriptions");
-  });
-});
-
-describe("the tool list responds to configuration", () => {
-  it("registers everything by default", () => {
-    const built = buildServer(testConfig());
-    expect(built.toolCount).toBe(ALL_TOOLS.length);
-  });
-
-  it("read-only mode removes the write rather than erroring on it", () => {
-    // A model cannot call a tool it cannot see. An error is an invitation to
-    // retry differently.
-    const built = buildServer(testConfig({ readOnly: true }));
-    expect(built.toolCount).toBe(ALL_TOOLS.length - 1);
-  });
-
-  it("switching the library off removes the whole group", () => {
-    const built = buildServer(testConfig({ libraryEnabled: false }));
-    const libraryTools = ALL_TOOLS.filter((t) => t.surface === "library").length;
-    expect(libraryTools).toBe(7);
-    expect(built.toolCount).toBe(ALL_TOOLS.length - libraryTools);
-  });
-
-  it("analytics tools stay listed when unconfigured, so they can explain themselves", () => {
-    const built = buildServer(testConfig({ vendorNumber: undefined, reporterToken: undefined }));
-    const names = ALL_TOOLS.filter((t) => t.surface === "reporter").map((t) => t.name);
-    expect(names).toContain("check_analytics_access");
-    expect(built.toolCount).toBe(ALL_TOOLS.length);
-  });
-});
-
-describe("the write guard", () => {
-  it("refuses a destructive tool without confirm, and names what it would do", () => {
-    const guard = new WriteGuard(testConfig());
-    expect(() => guard.check("export_subscriptions", "destructive", undefined, "write to /tmp/x.opml")).toThrow(
-      WriteBlockedError,
-    );
-    try {
-      guard.check("export_subscriptions", "destructive", undefined, "write to /tmp/x.opml");
-    } catch (error) {
-      expect((error as Error).message).toContain("confirm: true");
-      expect((error as Error).message).toContain("/tmp/x.opml");
-    }
-  });
-
-  it("allows it with confirm", () => {
-    const guard = new WriteGuard(testConfig());
-    expect(() => guard.check("export_subscriptions", "destructive", true, "x")).not.toThrow();
-  });
-
-  it("blocks writes entirely in read-only mode, even with confirm", () => {
-    const guard = new WriteGuard(testConfig({ readOnly: true }));
-    expect(() => guard.check("export_subscriptions", "destructive", true, "x")).toThrow(/READ_ONLY/);
-  });
-
-  it("blocks destructive writes when they are disabled but writes are not", () => {
-    const guard = new WriteGuard(testConfig({ allowDestructive: false }));
-    expect(() => guard.check("export_subscriptions", "destructive", true, "x")).toThrow(/ALLOW_DESTRUCTIVE/);
-  });
-
-  it("never gates a read", () => {
-    const guard = new WriteGuard(testConfig({ readOnly: true, allowDestructive: false }));
-    expect(() => guard.check("search_podcasts", "read", undefined, "x")).not.toThrow();
+    const library = ALL_TOOLS.filter((t) => t.tags.includes("library"));
+    expect(library.map((t) => t.name)).toContain("search_library");
+    expect(library.map((t) => t.name)).toContain("export_subscriptions");
+    for (const tool of ALL_TOOLS) expect(tool.openWorld, tool.name).toBe(!tool.tags.includes("library"));
   });
 });
 

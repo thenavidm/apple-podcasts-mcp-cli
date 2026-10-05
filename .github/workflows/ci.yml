@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: [20, 22]
+        node: [22, 24]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
@@ -43,10 +43,11 @@ jobs:
       - run: npm run build
 
       - name: Server starts and lists every tool
+        # Stdin stays open while the request is answered: the MCP stdio binding stops a server whose input has ended.
         run: |
-          printf '%s\n%s\n' \
+          (printf '%s\n%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; sleep 5) \
             | node dist/index.js 2>/dev/null \
             | node -e '
               let raw = "";
@@ -70,10 +71,11 @@ jobs:
       - name: Switching the library off hides that whole group
         env:
           APPLE_PODCASTS_LIBRARY: "0"
+        # Stdin stays open while the request is answered: the MCP stdio binding stops a server whose input has ended.
         run: |
-          printf '%s\n%s\n' \
+          (printf '%s\n%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; sleep 5) \
             | node dist/index.js 2>/dev/null \
             | node -e '
               let raw = "";
@@ -96,10 +98,11 @@ jobs:
       - name: Read-only mode hides every write
         env:
           APPLE_PODCASTS_READ_ONLY: "1"
+        # Stdin stays open while the request is answered: the MCP stdio binding stops a server whose input has ended.
         run: |
-          printf '%s\n%s\n' \
+          (printf '%s\n%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; sleep 5) \
             | node dist/index.js 2>/dev/null \
             | node -e '
               let raw = "";
@@ -116,10 +119,11 @@ jobs:
             '
 
       - name: The one write refuses without confirm
+        # Stdin stays open while the request is answered: the MCP stdio binding stops a server whose input has ended.
         run: |
-          printf '%s\n%s\n' \
+          (printf '%s\n%s\n' \
             '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
-            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"export_subscriptions","arguments":{"path":"/tmp/ci.opml"}}}' \
+            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"export_subscriptions","arguments":{"path":"/tmp/ci.opml"}}}'; sleep 5) \
             | node dist/index.js 2>/dev/null \
             | node -e '
               let raw = "";

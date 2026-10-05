@@ -2,9 +2,26 @@
 
 | Component | Version | Last Updated |
 |-----------|---------|--------------|
-| apple-podcasts-mcp-cli | 1.1.2 | 2026-10-04 |
+| apple-podcasts-mcp-cli | 2.0.0 | 2026-10-05 |
 
 ---
+
+## 2.0.0, 2026-10-05
+
+Built on [Slipway](https://github.com/thenavidm/slipway) 0.1.9. The 32 tools keep their names and arguments, and every difference below was measured against 1.1.2 before release.
+
+- **A person approves the OPML export over MCP.** It is the one tool that writes, and it overwrites whatever is at the path. Claude Code (2.1.246 and later) shows its own prompt, and a client that can show forms asks with an approval form whose one box starts unticked. Approvals are signed, bound to the exact call and work once. Where a client can do neither, the model's `confirm: true` still counts, and `APPLE_PODCASTS_CONFIRM=model` makes it enough everywhere. The refusal still says the export overwrites the file, and the audit log records who approved it.
+- **A smaller tool list.** 12,701 tokens in Claude Code with every tool loaded, down from 13,764: the per-tool `$schema` line, an `execution` field and `additionalProperties: false` are gone. The last one advertised strict input while unknown keys were dropped anyway; the schema now says what happens. The library tools still tell clients they never leave this Mac.
+- **`APPLE_PODCASTS_LIBRARY=0` works as before**, through the `library` toolset it now turns off, and `APPLE_PODCASTS_TOOLSETS` can name toolsets directly.
+- **Exit codes follow the house contract everywhere.** An unknown command, the export in read-only mode and a library tool with the library off exit 2 instead of 1, and an argument Apple rejects exits 2 instead of 5. 1 now means an unexpected error; Apple's rate limit, which it sends as a 403, still exits 7, and a library macOS will not open still exits 5. Errors keep the endpoint, the source and Apple's own words in `details`.
+- **`which <words>` finds a command in the words people use**: "where does a show rank" finds `find-chart-position` and "how is this show rated" finds `get-reviews`. `agent-context` describes every command, flag and setting as JSON. In Codex, finding the command that shows where a podcast ranks across countries took 84,197 input tokens instead of 84,531 (median of five). Over MCP the same task read one more out of about 48,260, all of it in the part of the tool list Codex keeps when it cuts a long printout.
+- **`install <client>`** adds the server to Claude Code, Codex, Claude Desktop, Cursor, VS Code or Gemini CLI in each one's own format.
+- **Less work to start.** The entry turns on Node's compile cache, and the server spends 164 ms of CPU before its first answer where 1.1.2 spent 199 (median of 21 runs, taking turns on one busy Mac). npx installs 4 dependencies instead of 94.
+- **Docs fixes.** SECURITY.md said the server has no write path and that HTTP has no authentication; it now describes the export and `--http`'s token and Origin checks. The README has a Features table and a Which one table, the release workflow attaches the desktop extension, the icon and terminal recording load from cdn.navid.me, and THIRD_PARTY_NOTICES.md lists the production dependencies' licenses.
+
+### Upgrading
+
+Node 22 or newer; 1.1 ran on 20, and the library's built-in SQLite needs 22.5. Scripts keep working for success, usage errors, a refused export and missing analytics setup; one that read exit 1 as an unknown command, read-only mode or the library being off, or 5 as a bad argument, should read 2. Over MCP, expect an approval prompt or form for the export; a headless agent that should export with `confirm: true` alone needs `APPLE_PODCASTS_CONFIRM=model`. A script that pipes JSON-RPC into the server must keep stdin open until it reads the answer: the server now stops when its input ends, as the MCP stdio binding asks. `--http` will not start on an address other than localhost without `APPLE_PODCASTS_HTTP_TOKEN`, and refuses a page from another site unless `APPLE_PODCASTS_HTTP_ALLOWED_ORIGINS` lists it. Some terminal screens grew: the general help by 132 tokens, for `which`, `install`, the flags, the exit codes and the safety settings it now lists; the command list by 37, for the library toolset's heading and the lines that point to `which` and `--help`; and a missing argument's error by 17, for its code and the help to read.
 
 ## 1.1.2, 2026-10-04
 

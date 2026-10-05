@@ -1,66 +1,52 @@
 /**
- * Shared plumbing every tool uses.
+ * Shared plumbing every tool uses, now on Slipway.
  *
- * Registering thirty-one tools by hand is thirty-one chances to forget an
- * annotation, leak a stack trace, or return a shape a model cannot read. This
- * wraps all of it once, so a tool module only describes what it actually does.
+ * Tool modules keep describing themselves with a Zod shape, a risk, the source
+ * they reach and a handler. This adapter turns each into a Slipway tool, so the
+ * MCP server, the CLI, the write guard, annotations and errors all come from
+ * the framework instead of a copy kept in this repo.
  *
- * The one piece of real logic here is how a tool declares which of the four
- * sources it needs. That declaration does two jobs: `server.ts` uses it to keep
- * the library tools out of the list when the library is switched off, and the
- * error path uses it to say "this needs a credential you have not set" rather
- * than surfacing a failure from three layers down.
+ * The one piece of real logic here is still which of the four sources a tool
+ * reaches. The library tools carry the `library` toolset, which
+ * `APPLE_PODCASTS_LIBRARY=0` turns off, and are marked closed-world, because
+ * they read a database on this Mac rather than anything on the internet.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z, type ZodRawShape } from "zod";
-import { AppleError } from "../api/errors.js";
+import {
+  ApiError,
+  NotFoundError as SlipwayNotFoundError,
+  RateLimitError as SlipwayRateLimitError,
+  SlipwayError,
+  TimeoutError as SlipwayTimeoutError,
+  UsageError,
+  httpError,
+  toSlipwayError,
+  toolkit,
+  z,
+  type Risk,
+  type Tool,
+} from "@thenavidm/slipway";
+import { AppleError, NotFoundError, RateLimitError, TimeoutError, ValidationError } from "../api/errors.js";
 import { normalizeStorefront, type Config } from "../config.js";
-import { annotationsFor, type Risk, type Surface, type WriteGuard } from "../safety.js";
 import type { Clients } from "../clients.js";
+
+/** Which of Apple's sources a tool reaches. */
+export type Surface =
+  /** itunes.apple.com, the charts host, the reviews RSS, or a podcast's feed. */
+  | "public"
+  /** The Apple Podcasts database on this Mac. */
+  | "library"
+  /** Apple Podcasts Connect, via the Reporter protocol. */
+  | "reporter";
 
 export type ToolContext = {
   clients: Clients;
   config: Config;
-  guard: WriteGuard;
   /** Resolve the storefront a call acts in, defaulting from config. */
   storefront: (hint?: string) => string;
 };
 
-export type ToolResult = {
-  content: { type: "text"; text: string }[];
-  isError?: boolean;
-};
-
-/**
- * A tool returns either pre-rendered text or a value to serialise.
- *
- * The reading tools return the tagged format from `format/podcasts.ts`, which
- * is already text. The summarising tools return a small object, where JSON is
- * clearer than tags. Both go through here so neither has to think about the
- * MCP content envelope.
- */
-export function ok(data: unknown): ToolResult {
-  const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
-  return { content: [{ type: "text", text }] };
-}
-
-/**
- * Errors come back as a normal result with `isError`, not a thrown exception.
- *
- * A thrown MCP error reaches the model as a protocol failure with no structure.
- * A result it can read tells it what went wrong and usually how to fix it,
- * which is the difference between a correct retry and a give-up. Every message
- * in `api/errors.ts` is written on that assumption, and throwing here would
- * throw all of them away.
- */
-export function fail(error: unknown): ToolResult {
-  const payload =
-    error instanceof AppleError
-      ? error.toJSON()
-      : { error: (error as Error)?.message ?? String(error) };
-  return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }], isError: true };
-}
+const kit = toolkit<ToolContext>();
 
 /** The optional storefront argument, on every tool that reads Apple's catalog. */
 export const storefrontArg = {
@@ -72,14 +58,12 @@ export const storefrontArg = {
     ),
 };
 
-/** The confirmation argument on the one tool that writes a file. */
+/**
+ * Kept so tool modules read the same, but never sent: Slipway adds `confirm`
+ * to the one tool that writes a file, with one description everywhere.
+ */
 export const confirmArg = {
-  confirm: z
-    .boolean()
-    .optional()
-    .describe(
-      "Must be true for this to run. It writes a file and will overwrite whatever is already at that path.",
-    ),
+  confirm: z.boolean().optional(),
 };
 
 export const limitArg = (max: number, note: string) => ({
@@ -95,7 +79,9 @@ export const showArg = {
     ),
 };
 
-export type ToolSpec<S extends ZodRawShape> = {
+type Shape = Record<string, z.ZodType>;
+
+export type ToolSpec<S extends Shape> = {
   name: string;
   /** One line, imperative. Shown in tool pickers. */
   title: string;
@@ -110,73 +96,66 @@ export type ToolSpec<S extends ZodRawShape> = {
   summary?: (args: z.infer<z.ZodObject<S>>) => string;
 };
 
-export function defineTool<S extends ZodRawShape>(spec: ToolSpec<S>): ToolSpec<S> {
-  return spec;
-}
+export type AnyToolSpec = Tool<ToolContext>;
 
 /**
- * A tool of any shape, for the one place tools are collected into a list.
- *
- * `ToolSpec` is generic over its schema, so a list of tools with different
- * schemas has no single type: each handler takes a different argument shape and
- * function parameters are contravariant. The type safety that matters lives
- * inside each `defineTool` call, where schema and handler are checked against
- * each other. This only loosens the seam where they are gathered.
+ * Apple's classes pick the exit code where its status cannot: Apple throttles
+ * with a 403, which is a rate limit and not a credential, and answers a missing
+ * show with 200 and an empty result. Everything else goes by status, then by
+ * what the message says, and a failure with neither is upstream, exit 5, as in
+ * 1.1. The endpoint, the source and Apple's own words ride along in `details`.
  */
-export type AnyToolSpec = Omit<ToolSpec<ZodRawShape>, "handler" | "summary"> & {
-  handler: (args: never, ctx: ToolContext) => Promise<unknown>;
-  summary?: (args: never) => string;
-};
+export function toSlipway(error: AppleError): SlipwayError {
+  const options = {
+    cause: error,
+    ...(error.status ? { status: error.status } : {}),
+    details: { endpoint: error.endpoint, surface: error.surface, ...(error.detail ? { detail: error.detail } : {}) },
+  };
+  const known =
+    error instanceof RateLimitError
+      ? new SlipwayRateLimitError(error.message)
+      : error instanceof NotFoundError
+        ? new SlipwayNotFoundError(error.message)
+        : error instanceof ValidationError
+          ? new UsageError(error.message)
+          : error instanceof TimeoutError
+            ? new SlipwayTimeoutError(error.message)
+            : error.status >= 400
+              ? httpError(error.status, error.message)
+              : toSlipwayError(new Error(error.message));
+  const code = known.code === "internal" ? new ApiError(error.message) : known;
+  return new SlipwayError(code.message, code.code, code.exitCode, { ...(code.hint ? { hint: code.hint } : {}), ...options });
+}
 
-/** Register one tool against the server, with guarding and error handling. */
-export function register(
-  server: McpServer,
-  contextFor: (extra: unknown) => ToolContext,
-  spec: AnyToolSpec,
-): void {
-  server.registerTool(
-    spec.name,
-    {
-      title: spec.title,
-      description: spec.description,
-      inputSchema: spec.schema,
-      annotations: {
-        title: spec.title,
-        ...annotationsFor(spec.risk, spec.surface, { idempotent: spec.idempotent }),
-      },
-    },
-    // The SDK derives its callback type from the schema generic. This wrapper is
-    // generic over the same shape, but TypeScript cannot prove the two equal
-    // through the indirection, so the cast lives at this single boundary rather
-    // than in every tool definition.
-    (async (args: Record<string, unknown>, extra: unknown) => {
+export function defineTool<S extends Shape>(spec: ToolSpec<S>): Tool<ToolContext> {
+  const { confirm: _confirm, ...shape } = spec.schema as Shape;
+  const handler = spec.handler as (args: Record<string, unknown>, ctx: ToolContext) => Promise<unknown>;
+  return kit.defineTool({
+    name: spec.name,
+    title: spec.title,
+    description: spec.description,
+    input: z.object(shape),
+    risk: spec.risk,
+    // The library is a database on this Mac, not the open internet.
+    openWorld: spec.surface !== "library",
+    ...(spec.surface === "library" ? { tags: ["library"] } : {}),
+    ...(spec.risk === "destructive" ? { consequence: "writes a file and overwrites whatever is already at that path" } : {}),
+    ...(spec.idempotent !== undefined ? { idempotent: spec.idempotent } : {}),
+    ...(spec.summary ? { summary: spec.summary as (args: Record<string, unknown>) => string } : {}),
+    handler: async (args, ctx) => {
       try {
-        const ctx = contextFor(extra);
-        if (spec.risk !== "read") {
-          const summary = spec.summary?.(args as never) ?? spec.name;
-          const confirm = (args as { confirm?: boolean }).confirm;
-          ctx.guard.check(spec.name, spec.risk, confirm, summary);
-        }
-        return ok(await spec.handler(args as never, ctx));
+        return await handler(args, ctx);
       } catch (error) {
-        return fail(error);
+        throw error instanceof AppleError ? toSlipway(error) : error;
       }
-    }) as never,
-  );
+    },
+  });
 }
 
-/**
- * Build the context every tool runs against.
- *
- * One function so the two surfaces cannot build a different context. `server.ts`
- * calls it once at assembly, `cli.ts` calls it per command, and neither knows
- * how the storefront default is resolved.
- */
-export function makeContext(clients: Clients, config: Config, guard: WriteGuard): ToolContext {
+export function makeContext(clients: Clients, config: Config): ToolContext {
   return {
     clients,
     config,
-    guard,
     storefront: (hint?: string) => (hint ? normalizeStorefront(hint) : config.storefront),
   };
 }

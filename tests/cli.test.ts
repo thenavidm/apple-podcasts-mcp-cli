@@ -1,173 +1,143 @@
 /**
- * The CLI adapter.
+ * The two surfaces, now that Slipway builds both from ALL_TOOLS.
  *
- * What matters here is that the shell surface is derived from the tool specs
- * rather than described a second time, so the tests that count are the ones
- * asserting parity with ALL_TOOLS and the ones covering the argv shapes a
- * person actually types.
+ * Parsing, help and the exit-code contract are Slipway's and tested there. What
+ * matters here: every tool arrives on both surfaces intact, 1.1's library
+ * switch still removes the library tools, the one write still asks first,
+ * Apple's errors keep their exit codes, and the docs stay in step with the code.
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { describe, expect, it } from "vitest";
-import { z } from "zod";
-import { flagsFor, parseArgs, isCliCommand, exitCodeFor, EXIT } from "../src/cli.js";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { EXIT } from "@thenavidm/slipway";
+import { checkApp, cli, connect } from "@thenavidm/slipway/testing";
+import { LibraryError, NotFoundError, RateLimitError, ReporterError, ServerError, ValidationError, errorFor } from "../src/api/errors.js";
+import { app } from "../src/app.js";
 import { ALL_TOOLS } from "../src/tools/index.js";
+import { toSlipway } from "../src/tools/kit.js";
 
-describe("flagsFor", () => {
-  it("derives a flag per schema key, kebab-cased", () => {
-    const flags = flagsFor({ include_episodes: z.boolean().optional() });
-    expect(flags[0]).toMatchObject({ key: "include_episodes", flag: "--include-episodes", kind: "boolean" });
+/** Nothing here may read the real library: the path cannot exist. */
+const env = { APPLE_PODCASTS_LIBRARY_PATH: "/nonexistent/apple-podcasts-mcp-test.sqlite" };
+afterEach(() => vi.unstubAllEnvs());
+
+const LIBRARY = ["list_subscriptions", "search_library", "list_recent_episodes", "list_saved_episodes", "get_library_episode", "library_stats", "export_subscriptions"];
+
+describe("Apple Podcasts on Slipway", () => {
+  it("offers every tool as a command and over MCP, under the same names", async () => {
+    const list = await cli(app, [], { env });
+    for (const tool of ALL_TOOLS) expect(list.stdout).toContain(tool.command);
+    const mcp = await connect(app, { env });
+    const names = (await mcp.listTools()).map((tool) => tool.name).sort();
+    await mcp.close();
+    expect(names).toEqual(ALL_TOOLS.map((tool) => tool.name).sort());
   });
 
-  it("reads required from the absence of .optional()", () => {
-    const flags = flagsFor({ show: z.string(), storefront: z.string().optional() });
-    expect(flags.find((f) => f.key === "show")?.required).toBe(true);
-    expect(flags.find((f) => f.key === "storefront")?.required).toBe(false);
+  it("removes the seven library tools with APPLE_PODCASTS_LIBRARY=0, as 1.1 did", async () => {
+    for (const off of ["0", "false", "no"]) {
+      const mcp = await connect(app, { env: { ...env, APPLE_PODCASTS_LIBRARY: off } });
+      const names = (await mcp.listTools()).map((tool) => tool.name);
+      await mcp.close();
+      expect(names.length).toBe(ALL_TOOLS.length - LIBRARY.length);
+      for (const name of LIBRARY) expect(names).not.toContain(name);
+    }
+    const on = await connect(app, { env: { ...env, APPLE_PODCASTS_LIBRARY: "1" } });
+    expect((await on.listTools()).length).toBe(ALL_TOOLS.length);
+    await on.close();
   });
 
-  it("carries .describe() through as help", () => {
-    const flags = flagsFor({ show: z.string().describe("The show.") });
-    expect(flags[0]?.help).toBe("The show.");
+  it("marks only the library tools as never leaving this Mac", async () => {
+    const mcp = await connect(app, { env });
+    const tools = await mcp.listTools();
+    await mcp.close();
+    const closed = tools.filter((tool) => tool.annotations?.openWorldHint === false).map((tool) => tool.name);
+    expect(closed.sort()).toEqual([...LIBRARY].sort());
   });
 
-  it("finds the description whichever side of .optional() it was chained", () => {
-    const outer = flagsFor({ a: z.string().optional().describe("outer") });
-    const inner = flagsFor({ b: z.string().describe("inner").optional() });
-    expect(outer[0]?.help).toBe("outer");
-    expect(inner[0]?.help).toBe("inner");
+  it("refuses the export without --confirm, naming the path, before anything is written", async () => {
+    const run = await cli(app, ["export-subscriptions", "--path", "/tmp/never-written.opml"], { env });
+    expect(run.code).toBe(2);
+    const error = JSON.parse(run.stderr);
+    expect(error.code).toBe("refused");
+    expect(error.error).toContain("--confirm");
+    expect(error.error).toContain("/tmp/never-written.opml");
+    expect(error.error).toContain("overwrites whatever is already at that path");
   });
 
-  it("exposes an enum's values as choices", () => {
-    const flags = flagsFor({ chart: z.enum(["shows", "episodes"]).optional() });
-    expect(flags[0]).toMatchObject({ kind: "enum", choices: ["shows", "episodes"] });
+  it("hides the export in read-only mode and refuses it with destructive writes off", async () => {
+    const mcp = await connect(app, { env: { ...env, APPLE_PODCASTS_READ_ONLY: "1" } });
+    const names = (await mcp.listTools()).map((tool) => tool.name);
+    await mcp.close();
+    expect(names).not.toContain("export_subscriptions");
+    expect(names).toContain("search_podcasts");
+    const off = { ...env, APPLE_PODCASTS_ALLOW_DESTRUCTIVE: "0" };
+    expect((await cli(app, ["export-subscriptions", "--path", "/tmp/x.opml", "--confirm", "--dry-run"], { env: off })).code).toBe(2);
   });
 
-  it("marks a scalar array repeatable and an object array json", () => {
-    const flags = flagsFor({
-      storefronts: z.array(z.string()).optional(),
-      shows: z.array(z.object({ id: z.string() })).optional(),
-    });
-    expect(flags.find((f) => f.key === "storefronts")).toMatchObject({ kind: "string", repeatable: true });
-    expect(flags.find((f) => f.key === "shows")).toMatchObject({ kind: "json", repeatable: true });
+  it("finds the tool for the words people type about rankings and reviews", async () => {
+    const first = async (words: string[]) => (await cli(app, ["which", ...words], { env })).stdout.trim().split("\n")[0];
+    expect(await first(["where", "does", "a", "show", "rank"])).toContain("find-chart-position");
+    expect(await first(["how", "is", "this", "show", "rated"])).toContain("get-reviews");
+  });
+
+  it("says there is nothing to sign in to", async () => {
+    const run = await cli(app, ["login"], { env });
+    expect(run.code).toBe(0);
+    expect(run.stdout).toContain("nothing to sign in to");
+  });
+
+  it("passes slipway check", async () => {
+    const report = await checkApp(app, { env });
+    expect(report.findings.filter((finding) => finding.level === "error")).toEqual([]);
   });
 });
 
-describe("parseArgs", () => {
-  const flags = flagsFor({
-    show: z.string(),
-    limit: z.number().optional(),
-    confirm: z.boolean().optional(),
-    storefronts: z.array(z.string()).optional(),
-    window: z.object({ days: z.number() }).optional(),
-    chart_kind: z.enum(["shows", "episodes"]).optional(),
+describe("Apple's errors keep their exit codes and their details", () => {
+  it("calls Apple's 403 a rate limit, as 1.1 did, not a credential problem", () => {
+    const error = toSlipway(errorFor(403, "/search", "<html>Forbidden</html>"));
+    expect(error).toBeInstanceOf(Error);
+    expect(error.exitCode).toBe(EXIT.rateLimited);
+    expect(error.details).toMatchObject({ endpoint: "/search", surface: "apple" });
   });
 
-  it("accepts --flag value and --flag=value alike", () => {
-    expect(parseArgs(["--show", "1469759170"], flags)).toEqual({ show: "1469759170" });
-    expect(parseArgs(["--show=1469759170"], flags)).toEqual({ show: "1469759170" });
-  });
-
-  it("accepts the underscore spelling of a flag", () => {
-    expect(parseArgs(["--chart_kind", "episodes"], flags)).toEqual({ chart_kind: "episodes" });
-  });
-
-  it("treats a boolean as a bare switch", () => {
-    expect(parseArgs(["--show", "x", "--confirm"], flags)).toEqual({ show: "x", confirm: true });
-    expect(parseArgs(["--confirm=false"], flags)).toEqual({ confirm: false });
-  });
-
-  it("coerces numbers, and refuses ones that are not", () => {
-    expect(parseArgs(["--limit", "25"], flags)).toEqual({ limit: 25 });
-    expect(() => parseArgs(["--limit", "many"], flags)).toThrow(/expects a number/);
-  });
-
-  it("parses a json flag, and refuses malformed json", () => {
-    expect(parseArgs(['--window={"days":7}'], flags)).toEqual({ window: { days: 7 } });
-    expect(() => parseArgs(["--window", "{oops"], flags)).toThrow(/expects JSON/);
-  });
-
-  it("collects a repeatable flag into an array", () => {
-    expect(parseArgs(["--storefronts", "us", "--storefronts", "gb"], flags)).toEqual({
-      storefronts: ["us", "gb"],
-    });
-  });
-
-  it("checks an enum against its choices", () => {
-    expect(() => parseArgs(["--chart-kind", "books"], flags)).toThrow(/expects one of/);
-  });
-
-  it("fills the first required flag from a bare argument", () => {
-    expect(parseArgs(["1469759170"], flags)).toEqual({ show: "1469759170" });
-  });
-
-  it("wraps a bare argument when the required flag is repeatable", () => {
-    const repeatable = flagsFor({ shows: z.array(z.string()) });
-    expect(parseArgs(["1469759170"], repeatable)).toEqual({ shows: ["1469759170"] });
-  });
-
-  it("refuses an unknown option rather than dropping it", () => {
-    expect(() => parseArgs(["--nope", "x"], flags)).toThrow(/Unknown option/);
-  });
-
-  it("refuses a second bare argument", () => {
-    expect(() => parseArgs(["one", "two"], flags)).toThrow(/Unexpected argument/);
-  });
-});
-
-describe("parity with the MCP surface", () => {
-  it("routes every tool name, in both spellings", () => {
-    for (const tool of ALL_TOOLS) {
-      expect(isCliCommand([tool.name])).toBe(true);
-      expect(isCliCommand([tool.name.replace(/_/g, "-")])).toBe(true);
-    }
-  });
-
-  it("builds flags for every tool without throwing", () => {
-    for (const tool of ALL_TOOLS) {
-      expect(() => flagsFor(tool.schema)).not.toThrow();
-    }
-  });
-
-  it("gives every schema key a flag", () => {
-    for (const tool of ALL_TOOLS) {
-      expect(flagsFor(tool.schema)).toHaveLength(Object.keys(tool.schema).length);
-    }
-  });
-
-  it("leaves the server's own flags alone", () => {
-    expect(isCliCommand(["--http"])).toBe(false);
-    expect(isCliCommand(["--version"])).toBe(false);
-    expect(isCliCommand([])).toBe(false);
+  it.each([
+    ["a missing show", new NotFoundError("Not found.", 200, "/lookup"), EXIT.notFound],
+    ["an argument Apple rejects", new ValidationError("Apple rejected the request.", 400, "/search"), EXIT.usage],
+    ["Apple's own failure", new ServerError("Apple returned 503.", 503, "/search"), EXIT.api],
+    ["a rejected Reporter token", new ReporterError("Apple Podcasts Connect rejected the access token.", 401), EXIT.auth],
+    ["Reporter not configured", new ReporterError("Apple Podcasts Connect is not configured.", 0), EXIT.notConfigured],
+    ["a library macOS will not open", new LibraryError("macOS refused access to the Apple Podcasts library."), EXIT.api],
+    ["a rate limit by class", new RateLimitError("Apple is rate limiting this IP address on /search.", 403, "/search"), EXIT.rateLimited],
+  ])("%s", (_name, raw, code) => {
+    expect(toSlipway(raw).exitCode).toBe(code);
   });
 });
 
 describe("documentation stays in step with the code", () => {
   const read = (p: string): string => readFileSync(new URL(p, import.meta.url), "utf-8");
-  const names = (text: string): Set<string> => new Set(text.match(/APPLE_PODCASTS_[A-Z_]+/g) ?? []);
+  const names = (text: string): Set<string> => new Set((text.match(/APPLE_PODCASTS_[A-Z_]+/g) ?? []).filter((name) => !name.endsWith("_")));
+  const source = (dir: string): string =>
+    readdirSync(new URL(dir, import.meta.url), { withFileTypes: true })
+      .map((entry) => (entry.isDirectory() ? source(`${dir}${entry.name}/`) : entry.name.endsWith(".ts") ? read(`${dir}${entry.name}`) : ""))
+      .join("\n");
 
-  /**
-   * Two variables shipped undocumented and five never reached `--help`, which is
-   * the kind of drift nobody notices because both sides look complete on their own.
-   */
-  it("documents every environment variable the code reads", () => {
-    const used = names(["config.ts", "transport/http.ts"].map((f) => read(`../src/${f}`)).join("\n"));
+  /** Every variable the server reads: this repo's code, and Slipway's as agent-context lists them. */
+  const used = async (): Promise<Set<string>> => {
+    const context = JSON.parse((await cli(app, ["agent-context"], { env })).stdout);
+    return new Set([...names(source("../src/")), ...context.settings.map((setting: { env: string }) => setting.env)]);
+  };
+
+  it("documents every environment variable the code reads", async () => {
     const documented = names(read("../README.md"));
-    expect([...used].filter((v) => !documented.has(v))).toEqual([]);
+    expect([...(await used())].filter((v) => !documented.has(v))).toEqual([]);
   });
 
-  it("lists every environment variable in --help", () => {
-    const used = names(["config.ts", "transport/http.ts"].map((f) => read(`../src/${f}`)).join("\n"));
-    const helped = names(read("../src/index.ts"));
-    // The help groups the three HTTP ones as `APPLE_PODCASTS_HTTP_PORT / _HOST / _TOKEN`.
-    const shorthand = new Set(["APPLE_PODCASTS_HTTP_HOST", "APPLE_PODCASTS_HTTP_TOKEN"]);
-    expect([...used].filter((v) => !helped.has(v) && !shorthand.has(v))).toEqual([]);
+  it("lists every environment variable in --help", async () => {
+    const help = (await cli(app, ["--help"], { env })).stdout;
+    // The help groups the HTTP ones as `APPLE_PODCASTS_HTTP_PORT / _HOST / _TOKEN / _ALLOWED_ORIGINS`.
+    const shorthand = new Set(["APPLE_PODCASTS_HTTP_HOST", "APPLE_PODCASTS_HTTP_TOKEN", "APPLE_PODCASTS_HTTP_ALLOWED_ORIGINS"]);
+    expect([...(await used())].filter((v) => !help.includes(v) && !shorthand.has(v))).toEqual([]);
   });
 
-  /**
-   * Two in-page links pointed at headings that had been renamed, including the
-   * one row routing a shell user to the CLI. The ship checklist's link pass only
-   * greps http, so a dead `#anchor` is the kind that ships quietly.
-   */
   it.each(["../README.md", "../INSTALL.md"])("has no dead in-page anchors in %s", (file) => {
     if (!existsSync(new URL(file, import.meta.url))) return; // repo may ship one doc
     const md = read(file);
@@ -182,27 +152,5 @@ describe("documentation stays in step with the code", () => {
       .map((m) => m[1] as string)
       .filter((a) => !slugs.has(a));
     expect(dead).toEqual([]);
-  });
-});
-
-describe("exit codes", () => {
-  it("nothing configured is 10, not an auth failure", () => {
-    const e = { message: "Apple Podcasts Connect is not configured. This tool needs APPLE_PODCASTS_VENDOR_NUMBER and APPLE_PODCASTS_REPORTER_TOKEN." };
-    expect(exitCodeFor(e)).toBe(EXIT.config);
-  });
-
-  it("a real 401 is still auth", () => {
-    expect(exitCodeFor({ status: 401, message: "Reporter token rejected" })).toBe(EXIT.auth);
-  });
-
-  it("a refused write is 2, the caller's to fix", () => {
-    expect(exitCodeFor({ message: "export_subscriptions writes a file, so it will not run without --confirm." })).toBe(EXIT.usage);
-    expect(exitCodeFor({ message: "export_subscriptions is unavailable: this server is running with APPLE_PODCASTS_READ_ONLY=1." })).toBe(EXIT.usage);
-  });
-
-  it("not found is 3 and rate limited is 7", () => {
-    expect(exitCodeFor({ status: 404, message: "No show with that id" })).toBe(EXIT.notFound);
-    expect(exitCodeFor(Object.assign(new Error("No Apple Podcasts show with id 1 in the us storefront."), { name: "NotFoundError", status: 200 }))).toBe(EXIT.notFound);
-    expect(exitCodeFor({ status: 429, message: "slow down" })).toBe(EXIT.rateLimited);
   });
 });

@@ -8,7 +8,7 @@ This file covers the two optional parts.
 
 ## Prerequisites
 
-Node 20 or newer. Nothing else.
+Node 22 or newer. Nothing else.
 
 ## 1. Reading your own library (macOS)
 

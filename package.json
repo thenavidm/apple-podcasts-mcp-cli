@@ -1,6 +1,6 @@
 {
   "name": "@thenavidm/apple-podcasts-mcp-cli",
-  "version": "1.1.2",
+  "version": "2.0.0",
   "description": "Apple Podcasts MCP server and CLI for Claude Code, Codex and AI agents. 32 tools for podcast search, chart rank tracking, listener reviews, RSS feed parsing and validation, on-device transcript search, and Apple Podcasts Connect analytics.",
   "type": "module",
   "main": "./dist/index.js",
@@ -10,7 +10,7 @@
     "apple-podcasts-mcp-cli": "dist/npx.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "tsc",
@@ -21,12 +21,12 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build",
     "verify": "npm run typecheck && npm run build && npm test",
-    "check-sync": "./deploy/check-sync.sh"
+    "check-sync": "./deploy/check-sync.sh",
+    "build:mcpb": "bash desktop-extension/build.sh"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "zod": "^3.25.76",
-    "zod-to-json-schema": "^3.24.1"
+    "@thenavidm/slipway": "^0.1.9",
+    "zod": "^4.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -65,7 +65,9 @@
     "llm-tools",
     "typescript",
     "cli",
-    "command-line-tool"
+    "command-line-tool",
+    "slipway",
+    "mcp-cli"
   ],
   "files": [
     "dist",

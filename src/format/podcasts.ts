@@ -28,7 +28,7 @@
  * `safety.ts` for why that is not optional on the reviews path.
  */
 
-import { fence } from "../safety.js";
+import { fence } from "./fence.js";
 import type { Chart } from "../api/charts.js";
 import type { Feed, FeedEpisode } from "../api/feed.js";
 import type { RatingBreakdown, Review } from "../api/reviews.js";
