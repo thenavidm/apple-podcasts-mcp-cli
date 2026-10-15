@@ -43,9 +43,10 @@ the other. An empty result in one storefront is not evidence a show does not
 exist. Always report which storefront a figure came from.
 
 ## Ranking exists only in the top 100
-Apple publishes two charts per storefront: Top Shows, weighted by followers and
-slow to move, and Trending Episodes, which moves fast and is the better read on
-a topic. Both cap at 100. **There are no genre charts**: a genre-scoped request
+Apple publishes two charts per storefront: Top Shows, slow to move, and Trending
+Episodes, which moves fast and is the better read on a topic. Apple says both
+measure a mix of listening, follows and completion rate, not ratings, reviews or
+shares, and not the largest shows by listenership. Both cap at 100. **There are no genre charts**: a genre-scoped request
 returns 404, so a genre ranking can only be the overall chart filtered.
 
 Apple has no endpoint for "where does this show rank". Finding a rank means

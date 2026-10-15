@@ -22,7 +22,7 @@ export const getTopShows = defineTool({
   name: "get_top_shows",
   title: "Apple's Top Shows chart",
   description:
-    "Apple's live Top Shows chart for one storefront, ranked. This is Apple's own ordering, weighted by followers rather than plays, and it moves slowly. Capped at 100 by Apple. There are no genre charts: Apple serves one overall chart per country, so filtering by genre here filters this list rather than asking Apple for a different one.",
+    "Apple's live Top Shows chart for one storefront, ranked. This is Apple's own ordering, which its charts page says measures a mix of listening, follows and completion rate, not ratings, reviews or shares, and not the largest shows by listenership. It moves slowly. Capped at 100 by Apple. There are no genre charts: Apple serves one overall chart per country, so filtering by genre here filters this list rather than asking Apple for a different one.",
   schema: {
     ...limitArg(MAX_CHART_SIZE, `Apple refuses more than ${MAX_CHART_SIZE}.`),
     genre: z

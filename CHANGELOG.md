@@ -6,6 +6,10 @@
 
 ---
 
+## Unreleased
+
+- **What the charts measure.** The server called Top Shows follower-weighted. Apple's own charts page (podcasters.apple.com/support/3146-apple-podcasts-charts, read 2026-10-15) says both charts measure a mix of listening, follows and completion rate, that ratings, reviews and shares are not counted, and that the charts are not a measure of the largest shows by listenership. The tool description, guide and README now say that.
+
 ## 2.0.1, 2026-10-05
 
 - **Built on Slipway 0.1.17**, which a fresh install of 2.0.0 already used. Since the Slipway 2.0.0 was measured on, 0.1.9, `which` also reads a tool's argument names and prints a title once where a description opens with it, and the general help names the settings that connect an account and the safety switches and counts the rest, which `agent-context` describes one by one. [Slipway's changelog](https://github.com/thenavidm/slipway/blob/main/CHANGELOG.md) lists the rest.

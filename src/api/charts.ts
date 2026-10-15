@@ -7,8 +7,10 @@
  *
  * Two charts, and they answer different questions:
  *
- *   podcasts           Top Shows, ranked by Apple's own follower-weighted
- *                      measure. Slow moving. This is standing.
+ *   podcasts           Top Shows, ranked by Apple's own mix of listening,
+ *                      follows and completion rate (Apple's charts page);
+ *                      ratings, reviews and shares are not counted. Slow
+ *                      moving. This is standing.
  *   podcast-episodes   Trending Episodes. Fast moving, and the better signal
  *                      for what a topic is doing this week.
  *

@@ -581,9 +581,12 @@ Every listing here carries the storefront it came from for exactly this reason.
 
 ### Ranking stops at 100, and there are no genre charts
 
-Apple publishes two charts per storefront: Top Shows, which is follower-weighted
-and slow, and Trending Episodes, which moves fast and is the better read on what
-a topic is doing this week. Both cap at 100 and asking for 200 fails.
+Apple publishes two charts per storefront: Top Shows, which moves slowly, and
+Trending Episodes, which moves fast and is the better read on what a topic is
+doing this week. Apple's own charts page says both measure a mix of listening,
+follows and completion rate, that ratings, reviews and shares are not counted,
+and that the charts are not a measure of the largest shows by listenership. Both
+cap at 100 and asking for 200 fails.
 
 **A genre-scoped chart returns 404.** Apple serves one overall chart per country.
 The `genre` argument on `get_top_shows` filters that list, so it gives the
